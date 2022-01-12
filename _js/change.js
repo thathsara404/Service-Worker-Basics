@@ -1,0 +1,1 @@
+document.querySelector('h2').innerText = 'Server Version: ' + 0.35182293243151785

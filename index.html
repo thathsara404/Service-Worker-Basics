@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>serviceworker</title>
+</head>
+<body>
+    <h1>Run Web App with HTTPS and Service Workers</h1>
+    <h1>Contact Us: <a href="./contactUs.html">Contact Us</a></h1>
+    <h1>Contact Us By Service Woker: <a href="/contact">Contact Us</a></h1>
+    <h2></h2>
+    <img src="./img1.jpg" alt="mountain image" height="250" width="250">
+    <img srcset="./img-responsive/img2-small.jpg 500w, ./img-responsive/img2.jpg 600w" alt="good look image" height="300" width="300">
+    <button onclick="update()">Update Check</button>
+    <button onclick="unregister()">Unregister</button>
+    <button onclick="getAllStudents()">Get All Student API Call</button>
+    <!-- Refistering the service worker and access some available information. -->
+    <script>
+        if ('serviceWorker' in navigator) { //check serviceW worker API is available
+            console.log('service workers are enabled');
+            navigator.serviceWorker.register('./serviceworker.js', { scope: '/' })
+            .then( registration => {
+                console.log('Active Service Worker---> ', registration.active);
+                console.log('Service Worker going to replace by a new one---> ', registration.onStateChange);
+                console.log('Waiting Service Worker---> ', registration.waiting);
+                console.log('Currently installing Service Worker---> ', registration.installing);
+                console.log('Current Service Worker scope---> ', registration.scope);
+                console.log('service worker registered');
+            })
+            .catch( error => {
+                console.error('error in service worker registration', error);
+            })
+        } else {
+            console.log('service workers are not enabled');
+        }
+    </script>
+
+    <!-- Update Service Worker -->
+    <script>
+        const update = () => {
+            if ('serviceWorker' in navigator) {
+                console.log('service worker update check will be triggered');
+                navigator.serviceWorker.getRegistration()
+                    .then(registration => {
+                        registration.update();
+                    })
+            }
+        }   
+    </script>
+
+    <!-- Unregister / uninstall service worker -->
+    <script>
+        const unregister = () => {
+            if ('serviceWorker' in navigator) {
+                console.log('service worker will be uninstalled');
+                navigator.serviceWorker.getRegistration()
+                    .then(registration => {
+                        registration.unregister();
+                    })
+            }
+        }
+    </script>
+
+    <!-- Register a new user: this is for testing the api call intercepting and managing with service worker -->
+    <script>
+        function getAllStudents() {
+            fetch('api/getStudents', {
+                method: 'GET'
+            }).then((response) => {
+                console.log(response.body);
+            }).catch((error) => {
+                console.log(error);
+            });
+        }
+        function registerStudent() {
+            fetch('api/getStudents', {
+                method: 'GET',
+                body: {
+                    data: {name: 'thathsara', address: 'galle', gender: 'male'}
+                }
+            }).then((response) => {
+                console.log(response);
+            }).catch((error) => {
+                console.log(error);
+            });
+        }
+    </script>
+
+</body>
+    <!-- If you want to access the service worker data later in the code you can do that in this way. -->
+    <script>
+        if ('serviceWorker' in navigator) { // check service worker API is available
+            navigator.serviceWorker.getRegistration()
+                .then(registration => {
+                    registration.addEventListener('updatefound', event => { // new service worker is there to install
+                        const installingServiceWorker = registration.installing; // get the service worker which is going to install
+                        installingServiceWorker.addEventListener('statechange', () => { // track the status change of the given service worker 
+                            if ( installingServiceWorker.state === 'installed' ) {
+                                console.log('New service worker is installed.');
+                            } else if ( installingServiceWorker.state === 'activated' ) {
+                                console.log('New service worker is activated and controlling the page.');
+                            }
+                        })
+                    })
+                }).catch(error =>{
+                    console.error('Error occured while getting the service worker.');
+                })
+        }
+    </script>
+
+    <script src="./_js/change.js"></script>
+</html>
