@@ -7,7 +7,7 @@ try {
     console.error(e);
 }
 
-// Listening to the install event and Add Cache
+// Listening to the install event and Add Cache (Service Worker Prefetch)
 const preCacheList = ['./img1.jpg', '/', './_js/change.js'];
 self.addEventListener('install', event => {
     console.log('install event');
@@ -24,25 +24,9 @@ self.addEventListener('activate', event => {
     console.log('activate event');
 });
 
-async function getAndCache(event) {
-    fetch(event.request)
-        .then(networkResponse => {
-            return caches.open('cache-some-files-v1').then( cache => {
-                    cache.put(event.request, networkResponse.clone())
-                    return networkResponse;
-                })
-        });
-}
-
 // Listening to the fetch event
 self.addEventListener('fetch', event => {
     const requestURL = new URL(event.request.url);
-    console.log('event', requestURL);
-    // Note: do not try to make another fetch call within this listener because then we do the samething we normally do. But with a promise it can justified.
-    console.log(`fetch event listener fired ${event.request.url}`);
-    // Note: do not try to access the request content (body or header) without copying the content. Otherwise you want be able to pass the request to server back.
-    // Ex: const clonedReq = event.request.clone(); // do something with the content and place a return statement if you wanna pass the requsest back to the server.
-    // Fake response
     if (event.request.url === 'https://localhost:3000/contact') {
         // Here we fake our response
         const header = new Headers({
@@ -77,16 +61,21 @@ self.addEventListener('fetch', event => {
                 // )
 
                 // Stale-While-Revalidate
-                // In this approach we are looking into the network response. So this approach won't provide any benifit of sacing time with cache.
+                // With this approach we first look into the cache and if the cache available we send the content from the cache.
+                // At the sametime we download the latest content from the CDN or the server.
+                // If cacge is not availabe it sends the content from the network call.
+                // If lot of file requests going through this part, this will be slower when compared to the cache first.
                 // event.respondWith(
                 //     caches.match(event.request).then( response => {
                 //             const netWorkResult = fetch(event.request)
                 //                 .then(networkResponse => {
+                //                     console.log('fetch complete...');
                 //                     return caches.open('cache-some-files-v1').then( cache => {
                 //                             cache.put(event.request, networkResponse.clone())
                 //                             return networkResponse;
                 //                         })
                 //                 });
+                //             console.log('send before fetch...', response);
                 //             return response || netWorkResult;
                 //         })
                 // );
@@ -97,7 +86,6 @@ self.addEventListener('fetch', event => {
                     caches.match(event.request).then( response => {
                         if (response) {
                             console.log(`Stale-While sending from cache`);
-                            getAndCache(event);
                             return response;
                         } else {
                             return fetch(event.request)
@@ -171,4 +159,4 @@ setInterval(function() {
             })
         );
     });
-}, 5000)
+}, 1000*60*10)
